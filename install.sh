@@ -86,7 +86,11 @@ sed -i 's|RPC_URL := .*|RPC_URL := '$RPC_URL'|' projects/hello-world/contracts/M
 sed -i 's|ritualnetwork/infernet-node:.*|ritualnetwork/infernet-node:1.4.0|' deploy/docker-compose.yaml
 sed -i 's|0.0.0.0:4000:4000|0.0.0.0:4321:4000|' deploy/docker-compose.yaml
 sed -i 's|8545:3000|8845:3000|' deploy/docker-compose.yaml
-sed -i 's|container_name: infernet-anvil|container_name: infernet-anvil\n    restart: on-failure|' deploy/docker-compose.yaml
+
+# Only add restart if it's not already there
+if ! grep -q 'restart:' deploy/docker-compose.yaml; then
+  sed -i '/container_name: infernet-anvil/a \    restart: on-failure' deploy/docker-compose.yaml
+fi
 
 # === Start Initial Containers ===
 docker compose -f deploy/docker-compose.yaml up -d
