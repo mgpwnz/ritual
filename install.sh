@@ -87,7 +87,6 @@ sed -i 's|ritualnetwork/infernet-node:.*|ritualnetwork/infernet-node:1.4.0|' dep
 sed -i 's|0.0.0.0:4000:4000|0.0.0.0:4321:4000|' deploy/docker-compose.yaml
 sed -i 's|8545:3000|8845:3000|' deploy/docker-compose.yaml
 
-# Only add restart if it's not already there
 if ! grep -q 'restart:' deploy/docker-compose.yaml; then
   sed -i '/container_name: infernet-anvil/a \    restart: on-failure' deploy/docker-compose.yaml
 fi
@@ -95,19 +94,21 @@ fi
 # === Start Initial Containers ===
 docker compose -f deploy/docker-compose.yaml up -d
 
+# === Stop anvil if running (MOVED UP) ===
+if pgrep -x "anvil" > /dev/null; then
+    pkill -x anvil
+    sleep 2
+fi
+
 # === Install Foundry ===
 cd $HOME && mkdir -p foundry && cd foundry
 curl -L https://foundry.paradigm.xyz | bash
 
-# Set PATH for current script
 export PATH="$HOME/.foundry/bin:$PATH"
-
-# Persist it
 echo 'export PATH="$HOME/.foundry/bin:$PATH"' >> ~/.bashrc
 echo 'export PATH="$HOME/.foundry/bin:$PATH"' >> ~/.profile
+source ~/.bashrc
 
-# Test forge and foundryup
-forge --version || echo "Forge is still not available"
 foundryup
 
 # === Fix Forge Conflicts ===
@@ -115,12 +116,6 @@ if [ -f "/usr/bin/forge" ]; then
     sudo rm -f /usr/bin/forge
 fi
 forge --version
-
-# === Stop anvil if running ===
-if pgrep -x "anvil" > /dev/null; then
-    pkill -x anvil
-    sleep 2
-fi
 
 # === Install Contract Dependencies ===
 cd $HOME/infernet-container-starter/projects/hello-world/contracts/lib/
