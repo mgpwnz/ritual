@@ -99,36 +99,28 @@ docker compose -f deploy/docker-compose.yaml up -d
 cd $HOME && mkdir -p foundry && cd foundry
 curl -L https://foundry.paradigm.xyz | bash
 
-# Add to PATH for current session
+# Set PATH for current script
 export PATH="$HOME/.foundry/bin:$PATH"
 
-# Persist PATH
+# Persist it
 echo 'export PATH="$HOME/.foundry/bin:$PATH"' >> ~/.bashrc
 echo 'export PATH="$HOME/.foundry/bin:$PATH"' >> ~/.profile
 
-# === Stop anvil if running ===
-if pgrep -x "anvil" > /dev/null; then
-    echo "Stopping running 'anvil' process..."
-    pkill -x anvil
-    sleep 2
-fi
+# Test forge and foundryup
+forge --version || echo "Forge is still not available"
+foundryup
 
-# === Fix old forge conflict ===
+# === Fix Forge Conflicts ===
 if [ -f "/usr/bin/forge" ]; then
     sudo rm -f /usr/bin/forge
 fi
-
-# === Run foundryup safely ===
-echo "Running foundryup..."
-foundryup
-
-# === Final check: is forge available? ===
-if ! command -v forge &> /dev/null; then
-    echo "Error: 'forge' not found after installing Foundry."
-    exit 1
-fi
-
 forge --version
+
+# === Stop anvil if running ===
+if pgrep -x "anvil" > /dev/null; then
+    pkill -x anvil
+    sleep 2
+fi
 
 # === Install Contract Dependencies ===
 cd $HOME/infernet-container-starter/projects/hello-world/contracts/lib/
@@ -149,24 +141,8 @@ fi
 
 sed -i 's|0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e|'$CONTRACT_ADDRESS'|' "projects/hello-world/contracts/script/CallContract.s.sol"
 
-# === Call Contract with infinite retries and logging ===
-LOGFILE=contract-call.log
-DELAY=60
-echo "" > $LOGFILE  # очистка лога перед запуском
-
-ATTEMPT=1
-while true; do
-    echo "Attempt $ATTEMPT to call contract..." | tee -a "$LOGFILE"
-    if project=hello-world make call-contract 2>&1 | tee -a "$LOGFILE"; then
-        echo "✅ Contract call succeeded on attempt $ATTEMPT" | tee -a "$LOGFILE"
-        break
-    else
-        echo "❌ Contract call failed on attempt $ATTEMPT" | tee -a "$LOGFILE"
-        echo "Waiting $DELAY seconds before retry..." | tee -a "$LOGFILE"
-        sleep $DELAY
-        ((ATTEMPT++))
-    fi
-done
+# === Call Contract ===
+project=hello-world make call-contract
 
 # === Final Compose Setup ===
 cd deploy
