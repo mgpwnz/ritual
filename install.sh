@@ -99,28 +99,36 @@ docker compose -f deploy/docker-compose.yaml up -d
 cd $HOME && mkdir -p foundry && cd foundry
 curl -L https://foundry.paradigm.xyz | bash
 
-# Set PATH for current script
+# Add to PATH for current session
 export PATH="$HOME/.foundry/bin:$PATH"
 
-# Persist it
+# Persist PATH
 echo 'export PATH="$HOME/.foundry/bin:$PATH"' >> ~/.bashrc
 echo 'export PATH="$HOME/.foundry/bin:$PATH"' >> ~/.profile
 
-# Test forge and foundryup
-forge --version || echo "Forge is still not available"
-foundryup
-
-# === Fix Forge Conflicts ===
-if [ -f "/usr/bin/forge" ]; then
-    sudo rm -f /usr/bin/forge
-fi
-forge --version
-
 # === Stop anvil if running ===
 if pgrep -x "anvil" > /dev/null; then
+    echo "Stopping running 'anvil' process..."
     pkill -x anvil
     sleep 2
 fi
+
+# === Fix old forge conflict ===
+if [ -f "/usr/bin/forge" ]; then
+    sudo rm -f /usr/bin/forge
+fi
+
+# === Run foundryup safely ===
+echo "Running foundryup..."
+foundryup
+
+# === Final check: is forge available? ===
+if ! command -v forge &> /dev/null; then
+    echo "Error: 'forge' not found after installing Foundry."
+    exit 1
+fi
+
+forge --version
 
 # === Install Contract Dependencies ===
 cd $HOME/infernet-container-starter/projects/hello-world/contracts/lib/
