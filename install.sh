@@ -149,8 +149,26 @@ fi
 
 sed -i 's|0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e|'$CONTRACT_ADDRESS'|' "projects/hello-world/contracts/script/CallContract.s.sol"
 
-# === Call Contract ===
-project=hello-world make call-contract
+# === Call Contract with retries ===
+MAX_RETRIES=5
+DELAY=60
+
+for ((i=1; i<=MAX_RETRIES; i++)); do
+    echo "Attempt $i to call contract..."
+    if project=hello-world make call-contract; then
+        echo "✅ Contract call succeeded on attempt $i"
+        break
+    else
+        echo "❌ Contract call failed on attempt $i"
+        if [ $i -lt $MAX_RETRIES ]; then
+            echo "Waiting $DELAY seconds before retry..."
+            sleep $DELAY
+        else
+            echo "🚫 All $MAX_RETRIES attempts failed."
+            exit 1
+        fi
+    fi
+done
 
 # === Final Compose Setup ===
 cd deploy
