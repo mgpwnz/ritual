@@ -149,24 +149,22 @@ fi
 
 sed -i 's|0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e|'$CONTRACT_ADDRESS'|' "projects/hello-world/contracts/script/CallContract.s.sol"
 
-# === Call Contract with retries ===
-MAX_RETRIES=5
+# === Call Contract with infinite retries and logging ===
+LOGFILE=contract-call.log
 DELAY=60
+echo "" > $LOGFILE  # очистка лога перед запуском
 
-for ((i=1; i<=MAX_RETRIES; i++)); do
-    echo "Attempt $i to call contract..."
-    if project=hello-world make call-contract; then
-        echo "✅ Contract call succeeded on attempt $i"
+ATTEMPT=1
+while true; do
+    echo "Attempt $ATTEMPT to call contract..." | tee -a "$LOGFILE"
+    if project=hello-world make call-contract 2>&1 | tee -a "$LOGFILE"; then
+        echo "✅ Contract call succeeded on attempt $ATTEMPT" | tee -a "$LOGFILE"
         break
     else
-        echo "❌ Contract call failed on attempt $i"
-        if [ $i -lt $MAX_RETRIES ]; then
-            echo "Waiting $DELAY seconds before retry..."
-            sleep $DELAY
-        else
-            echo "🚫 All $MAX_RETRIES attempts failed."
-            exit 1
-        fi
+        echo "❌ Contract call failed on attempt $ATTEMPT" | tee -a "$LOGFILE"
+        echo "Waiting $DELAY seconds before retry..." | tee -a "$LOGFILE"
+        sleep $DELAY
+        ((ATTEMPT++))
     fi
 done
 
