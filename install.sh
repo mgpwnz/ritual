@@ -144,7 +144,7 @@ cd deploy
 docker compose down
 sleep 3
 rm -f docker-compose.yaml
-
+docker pull ritualnetwork/hello-world-infernet:latest
 cat > docker-compose.yml <<EOF
 services:
   node:
