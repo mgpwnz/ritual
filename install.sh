@@ -70,15 +70,16 @@ cp projects/hello-world/container/config.json deploy/config.json
 
 DEPLOY_JSON="deploy/config.json"
 CONTAINER_JSON="projects/hello-world/container/config.json"
+
 for file in "$DEPLOY_JSON" "$CONTAINER_JSON"; do
-    update_json_field "$file" "rpc_url"           "$RPC_URL"
-    update_json_field "$file" "private_key"       "$PRIVATE_KEY"
-    update_json_field "$file" "registry_address"  "$REGISTRY_ADDRESS"
-    update_json_field "$file" "sleep"             3
-    update_json_field "$file" "batch_size"        800
+    update_json_field "$file" "rpc_url" "$RPC_URL"
+    update_json_field "$file" "private_key" "$PRIVATE_KEY"
+    update_json_field "$file" "registry_address" "$REGISTRY_ADDRESS"
+    update_json_field "$file" "sleep" 3
+    update_json_field "$file" "batch_size" 800
     update_json_field "$file" "trail_head_blocks" 3
-    update_json_field "$file" "sync_period"       30
-    update_json_field "$file" "starting_sub_id"   160000
+    update_json_field "$file" "sync_period" 30
+    update_json_field "$file" "starting_sub_id" 160000
 done
 
 # === Patch Deploy Script and Makefile ===
@@ -91,8 +92,8 @@ sed -i 's|RPC_URL := .*|RPC_URL := '"$RPC_URL"'|' \
 
 # === Adjust Docker Compose Ports & Image ===
 sed -i 's|ritualnetwork/infernet-node:.*|ritualnetwork/infernet-node:1.4.0|' deploy/docker-compose.yaml
-sed -i 's|0.0.0.0:4000:4000|0.0.0.0:4321:4000|'              deploy/docker-compose.yaml
-sed -i 's|8545:3000|8845:3000|'                              deploy/docker-compose.yaml
+sed -i 's|0.0.0.0:4000:4000|0.0.0.0:4321:4000|' deploy/docker-compose.yaml
+sed -i 's|8545:3000|8845:3000|' deploy/docker-compose.yaml
 
 if ! grep -q 'restart:' deploy/docker-compose.yaml; then
   sed -i '/container_name: infernet-anvil/a \    restart: on-failure' deploy/docker-compose.yaml
@@ -125,15 +126,14 @@ if [ -f "/usr/bin/forge" ]; then
 fi
 forge --version
 
-# === Install Contract Dependencies & Generate Remappings ===
+# === Install Contract Dependencies & Remappings ===
 cd "$HOME/infernet-container-starter/projects/hello-world/contracts"
 rm -rf lib/forge-std lib/infernet-sdk
 
-# избегаем git-submodule, чтобы не требовать «чистой» зоны
-forge install foundry-rs/forge-std --no-git
-forge install ritual-net/infernet-sdk --no-git
+forge install foundry-rs/forge-std --commit
+forge install ritual-net/infernet-sdk --commit
 
-# формируем remappings.txt
+# Генерируем remappings.txt
 forge remappings > remappings.txt
 
 # === Deploy Contracts ===
