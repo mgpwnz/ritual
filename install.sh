@@ -120,7 +120,14 @@ forge --version
 # === Install Contract Dependencies ===
 #cd $HOME/infernet-container-starter/projects/hello-world/contracts/lib/
 cd $HOME/infernet-container-starter/projects/hello-world/contracts/
+if [ ! -d .git ]; then
+  git init
+  git add .
+  git commit -m "chore: prepare contracts for forge deps"
+fi
+
 rm -rf lib
+
 #rm -rf forge-std infernet-sdk
 forge install  foundry-rs/forge-std
 forge install  ritual-net/infernet-sdk
